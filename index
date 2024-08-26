@@ -1,0 +1,51 @@
+from flask import Flask, render_template, request
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import base64
+from io import BytesIO
+
+app = Flask(__name__)
+
+def scrape_google(query):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+    query = query.replace(' ', '+')
+    url = f"https://www.google.com/search?q={query}+rtp"
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    results = []
+    for g in soup.find_all('div', class_='g'):
+        anchors = g.find_all('a')
+        if anchors:
+            link = anchors[0]['href']
+            title = g.find('h3').text
+            results.append({'title': title, 'link': link})
+    return results
+
+def analyze_rtp_values(data, min_rtp=None, max_rtp=None, threshold=None):
+    # Analiz fonksiyonu burada olacak
+    pass
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        game_name = request.form['game_name']
+        search_results = scrape_google(game_name)
+        # Burada search_results'ı kullanarak RTP değerlerini çıkarabilirsiniz
+        # Örnek olarak, ilk sonuçtan RTP değerini alıyoruz
+        rtp_value = 97.5  # Örnek RTP değeri
+        data = pd.DataFrame({
+            'Oyun İsmi': [game_name],
+            'RTP Değeri': [rtp_value]
+        })
+        analysis_result = analyze_rtp_values(data, min_rtp=96.0, max_rtp=98.0, threshold=97.0)
+        return render_template('results.html', analysis_result=analysis_result)
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
